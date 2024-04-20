@@ -1,5 +1,6 @@
 // backend.js
 import express from "express";
+import cors from "cors";
 
 const users = {
     users_list: [
@@ -34,6 +35,8 @@ const users = {
 const app = express();
 const port = 8000;
 
+app.use(cors());
+
 app.use(express.json());
 
 const findUserByName = (name) => {
@@ -50,10 +53,42 @@ const addUser = (user) => {
   return user;
 };
 
+const generateID = (user) => {
+  user["id"] = Math.round(Math.random() * 100);
+  return user;
+}
+
 app.post("/users", (req, res) => {
   const userToAdd = req.body;
+  generateID(userToAdd);
   addUser(userToAdd);
-  res.send();
+  res.status(201).send();
+});
+
+app.delete("/users/:id", (req, res) => {
+  const userToDelete = req.params.id;
+  const index = users["users_list"].findIndex((user) => user["id"] === userToDelete);
+
+  if(index !== -1){
+    users["users_list"].splice(index, 1);
+    res.status(204).send();
+  }
+  else{
+    console.log(index);
+    console.log(userToDelete)
+    res.status(404).send("User not found.");
+  }
+})
+
+app.get("/users", (req, res) => {
+  const name = req.query.name;
+  if (name != undefined) {
+    let result = findUserByName(name);
+    result = { users_list: result };
+    res.send(result);
+  } else {
+    res.send(users);
+  }
 });
 
 app.get("/users/:id", (req, res) => {
@@ -68,6 +103,6 @@ app.get("/users/:id", (req, res) => {
 
 app.listen(port, () => {
   console.log(
-    `Example app listening at http://localhost:${port}/users?name=Mac`
+    `Example app listening at http://localhost:${port}/users`
   );
 });
